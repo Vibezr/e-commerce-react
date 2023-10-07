@@ -8,6 +8,7 @@ import {
     signOut,
     onAuthStateChanged,
 } from "firebase/auth";
+
 import {
     getFirestore,
     doc, 
@@ -17,7 +18,7 @@ import {
     writeBatch, 
     query,
     getDocs
-} from "firebase/firestore"
+} from "firebase/firestore";
 
 const firebaseConfig = {
     apiKey: "AIzaSyDncYY6E9AvZIuRj5lwxW5Au_foHSezgAc",
@@ -37,13 +38,11 @@ googleprovider.setCustomParameters({
     prompt: "select_account"
 });
 
-
-
 export const auth = getAuth();
-export const signInWithGooglePopUp = () => signInWithPopup(auth, googleprovider);
 
+export const signInWithGooglePopup = () => signInWithPopup(auth, googleprovider);
 
-export const db = getFirestore()
+export const db = getFirestore();
 
 export const addCollectionAndDocuments = async (collectionKey, objectsToAdd) => {
     const collectionRef = collection(db, collectionKey);
@@ -56,21 +55,16 @@ export const addCollectionAndDocuments = async (collectionKey, objectsToAdd) => 
 
     await batch.commit();
     console.log("done");
-}
+};
 
 export const getCategoriesAndDocuments = async () => {
     const collectionsRef = collection(db, "categories");
     const q = query(collectionsRef);
 
     const querySnapshot = await getDocs(q)
-    const categoryMap = querySnapshot.docs.reduce((acc, docSnapshot) => {
-        const {title, items} = docSnapshot.data();
-        acc[title.toLowerCase()] = items;
-        return acc;
-    }, {})
-
-    return categoryMap
-}
+    return querySnapshot.docs.map(docSnapshot => docSnapshot.data())
+    
+};
 
 export const createUserDocumentFromAuth = async (
     userAuth, 
@@ -95,7 +89,8 @@ export const createUserDocumentFromAuth = async (
             console.log("error creating the user", error.message);
         }
     }
-}
+    return userSnapShot;
+};
 
 export const createAuthUserWithEmailAndPassword = async (email, password) => {
     if(!email || !password) return;
@@ -111,4 +106,17 @@ export const signInAuthUserWithEmailAndPassword = async (email, password) => {
 
 export const signOutUser = async () => await signOut(auth);
 
-export const onAuthStateChangedListener = (callback) => onAuthStateChanged(auth, callback)
+export const onAuthStateChangedListener = (callback) => onAuthStateChanged(auth, callback);
+
+export const getCurrentUser = () => {
+    return new Promise ((resolve, reject) => {
+        const unsubscribe = onAuthStateChanged(
+            auth,
+            (userAuth) => {
+                unsubscribe();
+                resolve(userAuth);
+            },
+            reject
+        )
+    })
+}
